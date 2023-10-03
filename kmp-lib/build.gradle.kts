@@ -17,22 +17,6 @@ plugins {
     alias(libs.plugins.kmock)
 }
 
-val projectPackage = "tech.antibytes.lib"
-
-android {
-    namespace = projectPackage
-
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
-        }
-    }
-}
-
-kmock {
-    rootPackage = projectPackage
-}
-
 kotlin {
     android()
 
@@ -59,13 +43,12 @@ kotlin {
         }
     }
 
-    nativeCoroutine()
-    ensureAppleDeviceCompatibility()
-
     sourceSets {
         all {
             languageSettings.apply {
                 optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+                optIn("kotlinx.serialization.InternalSerializationApi")
+                optIn("kotlinx.serialization.ExperimentalSerializationApi")
                 optIn("kotlinx.coroutines.DelicateCoroutinesApi")
             }
         }
@@ -73,21 +56,30 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(antibytesCatalog.common.kotlin.stdlib)
+                implementation(antibytesCatalog.common.kotlinx.coroutines.core)
+                implementation(antibytesCatalog.common.ktor.client.core)
+                implementation(antibytesCatalog.common.ktor.client.contentNegotiation)
+                implementation((antibytesCatalog.common.ktor.client.json))
+                implementation((antibytesCatalog.common.ktor.client.logging))
+
+                implementation(antibytesCatalog.common.kotlinx.serialization.core)
+                implementation(antibytesCatalog.common.kotlinx.serialization.json)
             }
         }
         val commonTest by getting {
+            kotlin.srcDir("${buildDir.absolutePath.trimEnd('/')}/generated/antibytes/commonTest/kotlin")
+
             dependencies {
                 implementation(antibytesCatalog.common.test.kotlin.core)
+                implementation(antibytesCatalog.common.test.kotlin.annotations)
+                implementation(antibytesCatalog.common.test.ktor.client.mockClient)
+
                 implementation(libs.testUtils.core)
-                implementation(libs.testUtils.annotations)
+                implementation(libs.testUtils.annotations4)
+                implementation(libs.testUtils.coroutine)
+                implementation(libs.testUtils.ktor)
                 implementation(libs.kfixture)
                 implementation(libs.kmock)
-            }
-        }
-
-        val androidMain by getting {
-            dependencies {
-                implementation(antibytesCatalog.jvm.kotlin.stdlib.jdk8)
             }
         }
 
@@ -127,6 +119,21 @@ kotlin {
             }
         }
     }
+}
+
+android {
+    namespace = "tdd.georgia.pixalb.client"
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+}
+
+kmock {
+    rootPackage = "tdd.georgia.pixalb.client"
+    freezeOnDefault = false
+    allowInterfaces = true
 }
 
 tasks.withType(Test::class.java) {
